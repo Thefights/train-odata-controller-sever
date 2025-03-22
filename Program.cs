@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi.Models;
 using train_odata_controller_sever.Data;
+using train_odata_controller_sever.Models;
 
 namespace train_odata_controller_sever
 {
@@ -10,8 +13,6 @@ namespace train_odata_controller_sever
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -29,6 +30,21 @@ namespace train_odata_controller_sever
                     }
                 });
             });
+
+            // OData setup
+            builder.Services.AddControllers()
+                .AddOData(options =>
+                {
+                    var odataBuilder = new ODataConventionModelBuilder();
+                    odataBuilder.EntitySet<Product>("Products");
+                    odataBuilder.EntitySet<SubCategory>("SubCategories");
+                    odataBuilder.EntitySet<Category>("Categories");
+                    odataBuilder.EntitySet<Inventory>("Inventories");
+
+                    options.Select().Filter().Expand().OrderBy().Count().SetMaxTop(100)
+                           .AddRouteComponents("odata", odataBuilder.GetEdmModel());
+                });
+
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
